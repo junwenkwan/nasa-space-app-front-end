@@ -41,17 +41,3 @@ code {
   width: 30px;
   cursor: pointer;
 }
-
-.sidebar {
-  position: absolute;
-  background-color: gray;
-  color: white;
-  border-radius: 10px;
-  margin: 10px 10px;
-  box-shadow: 5px 10px #d8d5d5;
-  left: 0;
-  padding: 10px 10px;
-  z-index: 10;
-  width: 10vw;
-  border: 1px solid rgba(0,0,0,0.1);
-}
