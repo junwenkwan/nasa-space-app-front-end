@@ -1,25 +1,37 @@
 import React from "react";
+
+import "@reach/combobox/styles.css";
+
+//google search autocomplete
+import usePlacesAutocomplete, {
+  getGeocode,
+  getLatLng,
+} from "use-places-autocomplete";
+
+//click combobox
+import {
+Combobox,
+ComboboxInput,
+ComboboxPopover,
+ComboboxList,
+ComboboxOption,
+} from "@reach/combobox";
+
+import { formatRelative } from "date-fns";
+
+//sidebar.js
+import Sidebar from './Sidebar';
+
+//change map style
+import mapStyles from "./mapStyles";
+
+//google map API
 import {
   GoogleMap,
   useLoadScript,
   Marker,
   InfoWindow,
 } from "@react-google-maps/api";
-import usePlacesAutocomplete, {
-  getGeocode,
-  getLatLng,
-} from "use-places-autocomplete";
-import {
-  Combobox,
-  ComboboxInput,
-  ComboboxPopover,
-  ComboboxList,
-  ComboboxOption,
-} from "@reach/combobox";
-import { formatRelative } from "date-fns";
-
-import "@reach/combobox/styles.css";
-import mapStyles from "./mapStyles";
 
 const libraries = ["places"];
 const mapContainerStyle = {
@@ -45,32 +57,55 @@ export default function App() {
   const [selected, setSelected] = React.useState(null);
 
   const onMapClick = React.useCallback((e) => {
-    setMarkers((current) => [
+    console.log(e.latLng.lat());
+    console.log(e.latLng.lng());
+    // fetch('http://3.133.101.18/predict', {
+    //   method: 'POST',
+    //   headers: {
+    //     'Accept': 'application/json',
+    //     'Content-Type': 'application/json',
+    //   },
+    //   body: JSON.stringify({
+    //     latitude: e.latLng.lat(),
+    //     longitude: e.latLng.lng(),
+    //   })
+    // })
+    // probably where the POST API will be which then will setState GoogleMap InfoWindow below
+
+  setMarkers((current) => [
       ...current,
       {
-        lat: e.latLng.lat(),
-        lng: e.latLng.lng(),
-        time: new Date(),
+      lat: e.latLng.lat(),
+      lng: e.latLng.lng(),
+      time: new Date(),
       },
-    ]);
+  ]);
   }, []);
 
   const mapRef = React.useRef();
-  const onMapLoad = React.useCallback((map) => {
-    mapRef.current = map;
+      const onMapLoad = React.useCallback((map) => {
+      mapRef.current = map;
   }, []);
 
   const panTo = React.useCallback(({ lat, lng }) => {
-    mapRef.current.panTo({ lat, lng });
-    mapRef.current.setZoom(14);
+      mapRef.current.panTo({ lat, lng });
+      mapRef.current.setZoom(14);
   }, []);
 
   if (loadError) return "Error";
   if (!isLoaded) return "Loading...";
 
+  const items = [
+      { name: 'Map', label: 'Map' },
+      { name: 'Education', label: 'Education' },
+      { name: 'Charity', label: 'Charity' },
+]
   return (
     <div>
       <Search panTo={panTo} />
+      <Locate panTo={panTo} />
+      
+      <Sidebar items={items} />
 
       <GoogleMap
         id="map"
@@ -114,6 +149,26 @@ export default function App() {
         ) : null}
       </GoogleMap>
     </div>
+  );
+}
+
+function Locate({panTo}) {
+  return (
+    <button
+      className="locate" 
+      onClick={() => {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            panTo({
+              lat: position.coords.latitude,
+              lng: position.coords.longitude,
+            });
+          },
+        () => null
+        );
+      }}>
+      <img src='/locate_me.png' alt="compass - locate me"/>
+    </button>
   );
 }
 
