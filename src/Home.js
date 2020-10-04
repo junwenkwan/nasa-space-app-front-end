@@ -2,6 +2,7 @@ import React from 'react';
 
 import "@reach/combobox/styles.css";
 import mapStyles from "./mapStyles";
+import ApiController from './ApiController'
 
 import {
     GoogleMap,
@@ -42,7 +43,12 @@ lat: -37.560902,
 lng: 143.854965,
 };
 
+let apiController = new ApiController()
+var firstTime = true;
+var firstTimeCurrent = true;
+
 export default function Home() {
+    
     const { isLoaded, loadError } = useLoadScript({
         googleMapsApiKey: process.env.REACT_APP_GOOGLE_MAPS_API_KEY,
         libraries,
@@ -50,23 +56,10 @@ export default function Home() {
 
     const [markers, setMarkers] = React.useState([]);
     const [selected, setSelected] = React.useState(null);
+    const [predictions, setPredictions] = React.useState([]);
+    const [currentFires, setCurrentFires] = React.useState([]);
 
     const onMapClick = React.useCallback((e) => {
-        console.log(e.latLng.lat());
-        console.log(e.latLng.lng());
-        // fetch('http://3.133.101.18/predict', {
-        //   method: 'POST',
-        //   headers: {
-        //     'Accept': 'application/json',
-        //     'Content-Type': 'application/json',
-        //   },
-        //   body: JSON.stringify({
-        //     latitude: e.latLng.lat(),
-        //     longitude: e.latLng.lng(),
-        //   })
-        // })
-        // probably where the POST API will be which then will setState GoogleMap InfoWindow below
-    
         setMarkers((current) => [
             ...current,
             {
@@ -89,6 +82,54 @@ export default function Home() {
     
     if (loadError) return "Error";
     if (!isLoaded) return "Loading...";
+    
+    //[-18.0, 130] [-18.5, 135.8]
+    if (markers.length === 2 && firstTime) {
+      var topLeftCoor =  [markers[0].lat, markers[0].lng];
+      var bottomRightCoor = [markers[1].lat, markers[1].lng];  
+      firstTime = false;
+
+      apiController.getPredictionAPI(topLeftCoor , bottomRightCoor, new Date()).then(
+        object => {
+          for (var i = 0; i < object.length; i++) {
+            if (object[i].class_id === 1) {
+              var latlng = new window.google.maps.LatLng(object[i].latitude, object[i].longitude); 
+              setPredictions((current) => [
+                ...current,
+                {
+                lat: latlng.lat(),
+                lng: latlng.lng(),
+                },
+              ]);
+            }
+          }
+        }
+      )
+    }
+
+    if (firstTimeCurrent) {
+      firstTimeCurrent = false
+      apiController.getCurrentFireAPI().then(
+        object => {
+          
+          for (var i = 0; i < 200; i++) {
+            var latlng = new window.google.maps.LatLng(object[i].latitude, object[i].longitude); 
+              setCurrentFires((current) => [
+                ...current,
+                {
+                lat: latlng.lat(),
+                lng: latlng.lng(),
+                acq_date: object[i].acq_date,
+                acq_time: object[i].acq_time,
+                bright: object[i].bright_ti4
+
+                },
+              ]);
+          }
+        }
+      )
+     
+    }
 
     return (
         <div>
@@ -111,11 +152,32 @@ export default function Home() {
               onClick={() => {
                 setSelected(marker);
               }}
+
+            />
+          ))}
+
+          {predictions.map((prediction) => (
+              <Marker
+              key={`${new Date()}+${prediction.lat}-${prediction.lng}`}
+              position={{ lat: prediction.lat, lng: prediction.lng }}
               icon={{
-                url: `/logo.svg`,
+                url: `warning.svg`,
                 origin: new window.google.maps.Point(0, 0),
                 anchor: new window.google.maps.Point(15, 15),
-                scaledSize: new window.google.maps.Size(30, 30),
+                scaledSize: new window.google.maps.Size(15, 15),
+              }}
+            />
+          ))}
+
+          {currentFires.map((currentFire) => (
+              <Marker
+              key={`${currentFire.acq_date}-${currentFire.acq_time}-${currentFire.lat}-${currentFire.lng}-${currentFire.bright}`}
+              position={{ lat: currentFire.lat, lng: currentFire.lng }}
+              icon={{
+                url: `fire.svg`,
+                origin: new window.google.maps.Point(0, 0),
+                anchor: new window.google.maps.Point(15, 15),
+                scaledSize: new window.google.maps.Size(15, 15),
               }}
             />
           ))}
@@ -135,6 +197,7 @@ export default function Home() {
               </div>
             </InfoWindow>
           ) : null}
+        
         </GoogleMap>
       </div>
     )
