@@ -1,3 +1,11 @@
+Submission page:
+
+[https://2020.spaceappschallenge.org/challenges/confront/spot-fire-3/teams/the-universe-academy/project](https://2020.spaceappschallenge.org/challenges/confront/spot-fire-3/teams/the-universe-academy/project)
+
+Back-end: 
+
+[https://github.com/junwenkwan/nasa-space-app-back-end](https://github.com/junwenkwan/nasa-space-app-back-end)
+
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
 ## Available Scripts
